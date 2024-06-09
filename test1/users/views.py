@@ -7,8 +7,7 @@ from rest_framework.response import Response
 import datetime,jwt
 # Create your views here.
 
-class Register(APIView):
-
+class RegisterView(APIView):
 
     def post(self,request):
         
@@ -19,9 +18,7 @@ class Register(APIView):
 
             
 
-class Login(APIView):
-
-
+class LoginView(APIView):
 
     def post(self,request):
         email=request.data['email']
@@ -46,3 +43,23 @@ class Login(APIView):
         response=Response()
         response.set_cookie(key='jwt',value=token,httponly=True)
         return response
+
+
+class UserView(APIView):
+
+    def get(self,request):
+        token=request.COOKIES.get('jwt')
+        
+        if not token:
+            raise AuthenticationFailed('unauthoried')
+        
+        try:
+            payload=jwt.decode(token,'secret',algorithms=['HS256'])
+
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed("unauthoried error")
+        
+        user=User.objects.filter(id=payload['id']).first()
+        serialiser=serialize(user)
+    
+        return Response(serialiser.data)
